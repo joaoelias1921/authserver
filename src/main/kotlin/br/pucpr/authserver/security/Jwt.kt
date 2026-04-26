@@ -79,7 +79,7 @@ class Jwt {
         private fun UserToken.toAuthentication(): Authentication {
             val authorities = roles.map { SimpleGrantedAuthority("ROLE_$it") }
             return UsernamePasswordAuthenticationToken.authenticated(
-                this,
+                this.id.toString(),
                 id,
                 authorities
             )
