@@ -55,10 +55,9 @@ class TaskService(private val repository: TaskRepository) {
     }
 
     companion object {
-        val defaultForbiddenException = ForbiddenException("User not allowed to perform this operation")
         val log: Logger = LoggerFactory.getLogger(TaskService::class.java)
 
         fun getUserId() = SecurityContextHolder.getContext().authentication?.name
-            ?: throw defaultForbiddenException
+            ?: throw ForbiddenException("User not allowed to perform this operation")
     }
 }
