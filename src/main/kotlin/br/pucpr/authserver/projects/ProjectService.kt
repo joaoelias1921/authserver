@@ -6,10 +6,13 @@ import br.pucpr.authserver.exceptions.NotFoundException
 import br.pucpr.authserver.projects.requests.CreateProjectRequest
 import br.pucpr.authserver.tasks.Task
 import br.pucpr.authserver.tasks.TaskRepository
+import br.pucpr.authserver.tasks.TaskStatus
 import br.pucpr.authserver.tasks.requests.CreateTaskRequest
+import br.pucpr.authserver.users.SortDir
 import br.pucpr.authserver.users.UserRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
@@ -22,7 +25,13 @@ class ProjectService(
 ) {
     val userNotFoundException = NotFoundException("User not found")
 
-    fun findAll(): List<Project> = repository.findAllByOwnerId(getUserId().toLong())
+    fun findAll(direction: SortDir): List<Project> {
+        val sort = Sort.by(Sort.Direction.fromString(
+            direction.toString().uppercase()),
+            "name"
+        )
+        return repository.findAllByOwnerId(getUserId().toLong(), sort)
+    }
 
     fun findById(id: Long): Project {
         val project = repository.findByIdOrNull(id)
@@ -32,12 +41,16 @@ class ProjectService(
         return project
     }
 
-    fun findAllTasks(id: Long): List<Task> {
+    fun findAllTasks(id: Long, status: TaskStatus?): List<Task> {
         val project = repository.findByIdOrNull(id)
         if (project == null || project.owner.id.toString() != getUserId()) {
             throw NotFoundException("Project with id $id not found")
         }
-        return project.tasks
+        if (status != null) {
+            log.info("Searching for tasks with status $status")
+            return taskRepository.findAllByProjectIdAndStatus(id, status)
+        }
+        return taskRepository.findAllByProjectId(id)
     }
 
     fun insert(projectRequest: CreateProjectRequest): Project {

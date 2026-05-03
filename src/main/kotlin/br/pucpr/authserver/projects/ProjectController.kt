@@ -2,8 +2,10 @@ package br.pucpr.authserver.projects
 
 import br.pucpr.authserver.projects.requests.CreateProjectRequest
 import br.pucpr.authserver.projects.responses.ProjectResponse
+import br.pucpr.authserver.tasks.TaskStatus
 import br.pucpr.authserver.tasks.requests.CreateTaskRequest
 import br.pucpr.authserver.tasks.responses.TaskResponse
+import br.pucpr.authserver.users.SortDir
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -24,8 +27,10 @@ import org.springframework.web.bind.annotation.RestController
 class ProjectController(val projectService: ProjectService) {
     @SecurityRequirement(name = "jwt-auth")
     @GetMapping
-    fun list(): ResponseEntity<List<ProjectResponse>> {
-        val projects = projectService.findAll()
+    fun list(
+        @RequestParam direction: SortDir?,
+    ): ResponseEntity<List<ProjectResponse>> {
+        val projects = projectService.findAll(direction ?: SortDir.ASC)
         return projects
             .map { ProjectResponse(it) }
             .let { ResponseEntity.ok(it) }
@@ -40,8 +45,11 @@ class ProjectController(val projectService: ProjectService) {
 
     @SecurityRequirement(name = "jwt-auth")
     @GetMapping("/{id}/tasks")
-    fun getAllTasks(@PathVariable id: Long) =
-        projectService.findAllTasks(id)
+    fun getAllTasks(
+        @PathVariable id: Long,
+        @RequestParam status: TaskStatus?,
+    ) =
+        projectService.findAllTasks(id, status)
             .map { TaskResponse(it) }
             .let { ResponseEntity.ok(it) }
 
