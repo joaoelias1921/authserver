@@ -94,7 +94,7 @@ class ProjectService(
             throw NotFoundException("Project with id $id not found")
         }
         repository.deleteById(id)
-            .also { log.warn("Project with id {} deleted successfully", id) }
+            .also { log.warn("Project with id $id deleted successfully") }
     }
 
     companion object {

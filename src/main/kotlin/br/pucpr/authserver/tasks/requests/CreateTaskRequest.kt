@@ -19,6 +19,7 @@ data class CreateTaskRequest(
         return Task(
             title = title!!,
             description = description ?: "",
+            status = status,
             project = project
         )
     }
