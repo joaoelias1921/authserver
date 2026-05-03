@@ -10,11 +10,8 @@ data class CreateTaskRequest(
     @NotBlank
     val title: String?,
 
-    @NotBlank
-    val status: TaskStatus,
-
     @NotNull
-    val projectId: Long,
+    val status: TaskStatus,
 
     val description: String?,
 ) {

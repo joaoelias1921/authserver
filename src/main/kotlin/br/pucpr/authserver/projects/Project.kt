@@ -28,5 +28,5 @@ class Project (
     var owner: User,
 
     @OneToMany(mappedBy = "project", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var tasks: MutableSet<Task> = mutableSetOf(),
+    var tasks: List<Task> = emptyList(),
 )

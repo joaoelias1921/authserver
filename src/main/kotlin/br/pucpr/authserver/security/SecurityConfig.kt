@@ -33,11 +33,13 @@ class SecurityConfig(private val jwtTokenFilter: JwtTokenFilter) {
             .headers { it.frameOptions { fo -> fo.disable() } }
             .authorizeHttpRequests { requests ->
                 requests
-                    .requestMatchers(HttpMethod.GET).permitAll()
                     .requestMatchers(HttpMethod.POST, "/users").permitAll()
                     .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
                     // h2-console allowance only for development
                     .requestMatchers("/h2-console/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/tasks/**").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/projects/**").authenticated()
+                    .requestMatchers(HttpMethod.GET).permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter::class.java)

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ProjectRepository: JpaRepository<Project, Long> {
     fun findByNameAndOwnerId(projectName: String, ownerId: String): List<Project>
+    fun findAllByOwnerId(ownerId: Long): List<Project>
 }
