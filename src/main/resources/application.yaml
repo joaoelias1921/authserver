@@ -1,23 +1,13 @@
 spring:
+  config:
+    import: "classpath:security.yaml"
   application:
     name: authserver
-  datasource:
-    url: jdbc:h2:mem:db
-    username: sa
-    password: sa
-  jpa:
-    show-sql: false
-  h2:
-    console:
-      enabled: true
   web:
     error:
       whitelabel:
         enabled: false
       include-message: always
-      include-binding-errors: always
-      include-stacktrace: never
-      include-exception: true
 
 server:
   servlet:
@@ -30,6 +20,4 @@ springdoc:
 logging:
   file:
     path: ./logs
-  threshold:
-    file: TRACE
-    console: INFO
+

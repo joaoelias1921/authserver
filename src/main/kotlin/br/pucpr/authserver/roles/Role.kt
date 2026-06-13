@@ -6,13 +6,13 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 
 @Entity
-class Role (
+class Role(
     @Id @GeneratedValue
     var id: Long? = null,
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true, nullable = false)
     var name: String,
 
     @Column(nullable = false)
-    var description: String
+    var description: String = "",
 )

@@ -6,19 +6,25 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 
 data class CreateUserRequest(
-    @NotBlank
-    val name: String?,
-
-    @NotBlank
     @Email
     val email: String?,
 
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@\$!%*#?&])[A-Za-z\\d@\$!%*#?&]{8,}\$")
-    val password: String?
+    val password: String?,
+
+    @NotBlank
+    val name: String?,
+
+    @NotBlank
+    val phone: String?,
+
+    val bio: String?
 ) {
     fun toUser() = User(
+        email = email!!,
+        password = password!!,
         name = name!!,
-        email = email ?: "",
-        password = password ?: ""
+        phone = phone!!,
+        bio = bio ?: "",
     )
 }

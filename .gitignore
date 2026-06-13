@@ -39,3 +39,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+lambda/.env/
+lambda/package/
+fs/

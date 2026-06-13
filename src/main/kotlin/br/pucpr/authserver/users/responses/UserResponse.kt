@@ -4,8 +4,16 @@ import br.pucpr.authserver.users.User
 
 data class UserResponse(
     val id: Long,
-    val name: String,
     val email: String,
+    val name: String,
+    val bio: String,
+    val avatar: String
 ) {
-    constructor(user: User): this(user.id!!, user.name, user.email)
+    constructor(user: User, avatarUrl: String) : this(
+        id = user.id!!,
+        email = user.email,
+        name = user.name,
+        bio = user.bio,
+        avatar = avatarUrl
+    )
 }

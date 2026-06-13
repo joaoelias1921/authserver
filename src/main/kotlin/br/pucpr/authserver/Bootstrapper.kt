@@ -10,21 +10,24 @@ import org.springframework.stereotype.Component
 
 @Component
 class Bootstrapper(
-    private val userRepository: UserRepository,
-    private val roleRepository: RoleRepository
-): ApplicationListener<ContextRefreshedEvent> {
+    val rolesRepository: RoleRepository,
+    val userRepository: UserRepository
+) : ApplicationListener<ContextRefreshedEvent> {
     override fun onApplicationEvent(event: ContextRefreshedEvent) {
+        //Cria os papéis ADMIN e PREMIUM USER, se não existirem
         val adminRole =
-            roleRepository.findByName("ADMIN") ?:
-                roleRepository.save(Role(name = "ADMIN", description = "System Administrator"))
-        roleRepository.findByName("PREMIUM") ?:
-            roleRepository.save(Role(name = "PREMIUM", description = "Premium User"))
+            rolesRepository.findByName("ADMIN") ?: rolesRepository
+                .save(Role(name = "ADMIN", description = "System Administrator"))
+        rolesRepository.findByName("PREMIUM") ?: rolesRepository
+            .save(Role(name = "PREMIUM", description = "Premium user"))
 
+        //Cria um admin se não existir nenhum
         if (userRepository.findByRole("ADMIN").isEmpty()) {
             val admin = User(
-                name = "Auth Server Administrator",
                 email = "admin@authserver.com",
                 password = "admin",
+                name = "Auth Server Administrator",
+                phone = ""
             )
             admin.roles.add(adminRole)
             userRepository.save(admin)
