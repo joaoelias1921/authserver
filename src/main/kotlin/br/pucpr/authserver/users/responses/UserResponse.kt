@@ -7,13 +7,15 @@ data class UserResponse(
     val email: String,
     val name: String,
     val bio: String,
-    val avatar: String
+    val avatar: String,
+    val isActive: Boolean = false
 ) {
     constructor(user: User, avatarUrl: String) : this(
         id = user.id!!,
         email = user.email,
-        name = user.name,
+        name = user.name ?: "",
         bio = user.bio,
-        avatar = avatarUrl
+        avatar = avatarUrl,
+        isActive = user.isActive
     )
 }

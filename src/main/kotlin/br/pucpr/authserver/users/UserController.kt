@@ -2,9 +2,11 @@ package br.pucpr.authserver.users
 
 import br.pucpr.authserver.exception.ForbiddenException
 import br.pucpr.authserver.security.UserToken
+import br.pucpr.authserver.users.requests.ConfirmRequest
 import br.pucpr.authserver.users.requests.CreateUserRequest
 import br.pucpr.authserver.users.requests.LoginRequest
 import br.pucpr.authserver.users.requests.UpdateUserRequest
+import br.pucpr.authserver.users.responses.LoginResponse
 import br.pucpr.authserver.users.responses.UserResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
@@ -40,8 +42,25 @@ class UserController(val service: UserService) {
 
     @PostMapping("/login")
     fun login(
-        @Valid @RequestBody login: LoginRequest
-    ) = service.login(login.email!!, login.password!!)
+        @Valid @RequestBody request: LoginRequest
+    ): ResponseEntity<Any> {
+        val loginResult = service.loginByPhone(request)
+
+        return if (loginResult != null) {
+            val (token, userResponse) = loginResult
+            ResponseEntity.ok(LoginResponse(token, userResponse))
+        } else {
+            ResponseEntity.accepted().body(mapOf("message" to "Código de confirmação enviado via SMS"))
+        }
+    }
+
+    @PostMapping("/confirm")
+    fun confirm(
+        @Valid @RequestBody request: ConfirmRequest
+    ): ResponseEntity<LoginResponse> {
+        val (token, userResponse) = service.confirmUser(request)
+        return ResponseEntity.ok(LoginResponse(token, userResponse))
+    }
 
     @GetMapping("/{id}")
     fun getById(
@@ -61,7 +80,7 @@ class UserController(val service: UserService) {
         if (token.id != id && !token.isAdmin) {
             throw ForbiddenException("Update is not allowed")
         }
-        return service.update(id, user.name!!)
+        return service.update(id, user)
             ?.let { service.toResponse(it) }
             ?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.noContent().build()

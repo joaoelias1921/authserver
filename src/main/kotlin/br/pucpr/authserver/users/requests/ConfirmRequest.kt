@@ -2,10 +2,13 @@ package br.pucpr.authserver.users.requests
 
 import jakarta.validation.constraints.NotBlank
 
-data class UpdateUserRequest(
+data class ConfirmRequest(
     @NotBlank
-    val name: String?,
+    var phone: String,
 
     @NotBlank
-    val email: String,
+    var uuid: String,
+
+    @NotBlank
+    val code: String
 )

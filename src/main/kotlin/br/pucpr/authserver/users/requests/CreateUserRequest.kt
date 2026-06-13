@@ -18,6 +18,9 @@ data class CreateUserRequest(
     @NotBlank
     val phone: String?,
 
+    @NotBlank
+    val uuid: String?,
+
     val bio: String?
 ) {
     fun toUser() = User(
@@ -25,6 +28,7 @@ data class CreateUserRequest(
         password = password!!,
         name = name!!,
         phone = phone!!,
+        uuid = uuid!!,
         bio = bio ?: "",
     )
 }

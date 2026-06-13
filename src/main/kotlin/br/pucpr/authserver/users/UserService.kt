@@ -1,14 +1,17 @@
 package br.pucpr.authserver.users
 
 import br.pucpr.authserver.exception.NotFoundException
-import br.pucpr.authserver.exception.UnauthorizedException
 import br.pucpr.authserver.exceptions.BadRequestException
 import br.pucpr.authserver.integration.quotes.QuoteClient
 import br.pucpr.authserver.integration.sms.SMSClient
 import br.pucpr.authserver.roles.RoleRepository
 import br.pucpr.authserver.security.Jwt
+import br.pucpr.authserver.users.requests.ConfirmRequest
+import br.pucpr.authserver.users.requests.LoginRequest
+import br.pucpr.authserver.users.requests.UpdateUserRequest
 import br.pucpr.authserver.users.responses.LoginResponse
 import br.pucpr.authserver.users.responses.UserResponse
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
@@ -24,6 +27,7 @@ class UserService(
     val jwt: Jwt,
     val quoteClient: QuoteClient,
     val smsClient: SMSClient,
+    val smsVerificationService: SmsVerificationService
 ) {
     fun insert(user: User): User {
         if (repository.findByEmail(user.email) != null) {
@@ -71,26 +75,67 @@ class UserService(
         return true
     }
 
-    fun update(id: Long, name: String): User? {
+    fun update(id: Long, request: UpdateUserRequest): User? {
         val user = findById(id)
-        if (user.name == name) {
-            return null
-        }
-        user.name = name
+        user.name = request.name
+        user.email = request.email
         repository.save(user)
         return user
     }
 
-    fun login(email: String, password: String): LoginResponse {
-        val user = repository.findByEmail(email) ?: throw UnauthorizedException("User $email not found")
+    fun loginByPhone(request: LoginRequest): LoginResponse? {
+        val user = repository.findByPhone(request.phone)
 
-        if (user.password != password)
-            throw UnauthorizedException("Invalid password")
+        if (user != null && user.isActive && user.uuid == request.uuid) {
+            logSignInSuccess(user.id)
+            return LoginResponse(
+                token = jwt.createToken(user),
+                user = toResponse(user)
+            )
+        }
 
-        log.info("User ${user.id} is logged in")
+        val code = smsVerificationService.generateValidationCode(request.phone, request.uuid)
+
+        val tempUser = User(
+            phone = request.phone,
+            uuid = request.uuid,
+            name = "Usuário",
+            email = ""
+        )
+
+        smsClient.send(
+            user = tempUser,
+            text = "Seu código de confirmação do AuthServer é: $code",
+            important = true
+        )
+
+        return null
+    }
+
+    fun confirmUser(request: ConfirmRequest): LoginResponse {
+        if (!smsVerificationService.isValid(request.phone, request.uuid, request.code)) {
+            throw NotFoundException("Código de confirmação inválido, expirado ou não encontrado")
+        }
+
+        var user = repository.findByPhone(request.phone)
+
+        if (user == null) {
+            user = User(
+                phone = request.phone,
+                uuid = request.uuid,
+                isActive = true,
+                email = ""
+            )
+        } else {
+            user.uuid = request.uuid
+            user.isActive = true
+        }
+
+        val savedUser = repository.save(user)
+        logSignInSuccess(savedUser.id)
         return LoginResponse(
-            token = jwt.createToken(user),
-            user = toResponse(user)
+            token = jwt.createToken(savedUser),
+            user = toResponse(savedUser)
         )
     }
 
@@ -105,6 +150,14 @@ class UserService(
         UserResponse(user, avatarService.urlFor(user.avatar))
 
     companion object {
-        val log = LoggerFactory.getLogger(UserService::class.java)
+        val log: Logger = LoggerFactory.getLogger(UserService::class.java)
+
+        fun logSignInSuccess(id: Long?) {
+            if (id.toString().isNotEmpty()) {
+                log.info("User $id is logged in")
+                return
+            }
+            log.info("User logged in successfully")
+        }
     }
 }

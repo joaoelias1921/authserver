@@ -7,6 +7,7 @@ import br.pucpr.authserver.users.UserRepository
 import org.springframework.context.ApplicationListener
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.stereotype.Component
+import java.util.UUID
 
 @Component
 class Bootstrapper(
@@ -27,7 +28,9 @@ class Bootstrapper(
                 email = "admin@authserver.com",
                 password = "admin",
                 name = "Auth Server Administrator",
-                phone = ""
+                phone = "",
+                uuid = UUID.randomUUID().toString(),
+                isActive = true
             )
             admin.roles.add(adminRole)
             userRepository.save(admin)

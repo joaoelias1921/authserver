@@ -8,10 +8,9 @@ data class UserToken(
     val name: String,
     val roles: Set<String>
 ) {
-    constructor() : this(0, "", setOf())
     constructor(user: User) : this(
         id = user.id ?: -1L,
-        name = user.name,
+        name = user.name ?: "",
         roles = user.roles.map { it.name }.toSortedSet()
     )
 

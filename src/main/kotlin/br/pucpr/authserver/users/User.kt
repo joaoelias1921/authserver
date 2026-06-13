@@ -12,14 +12,15 @@ class User (
     @Column(nullable = false)
     var email: String,
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     val phone: String,
 
-    @Column(nullable = false)
-    var password: String,
+    var uuid: String,
 
-    @Column(nullable = false)
-    var name: String = "",
+    var password: String? = null,
+    var name: String? = null,
+
+    var isActive: Boolean = false,
 
     @Column(nullable = false)
     var bio: String = "",
