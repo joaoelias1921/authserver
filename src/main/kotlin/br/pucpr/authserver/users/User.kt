@@ -9,9 +9,6 @@ class User (
     @Id @GeneratedValue
     var id: Long? = null,
 
-    @Column(nullable = false)
-    var email: String,
-
     @Column(nullable = false, unique = true)
     val phone: String,
 
@@ -19,6 +16,7 @@ class User (
 
     var password: String? = null,
     var name: String? = null,
+    var email: String? = null,
 
     var isActive: Boolean = false,
 

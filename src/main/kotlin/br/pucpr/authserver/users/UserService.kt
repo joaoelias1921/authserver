@@ -30,7 +30,7 @@ class UserService(
     val smsVerificationService: SmsVerificationService
 ) {
     fun insert(user: User): User {
-        if (repository.findByEmail(user.email) != null) {
+        if (repository.findByEmail(user.email ?: "") != null) {
             throw BadRequestException("User already exists")
         }
         if (user.bio.isEmpty()) {
@@ -79,12 +79,13 @@ class UserService(
         val user = findById(id)
         user.name = request.name
         user.email = request.email
+        user.bio = request.bio
         repository.save(user)
         return user
     }
 
     fun loginByPhone(request: LoginRequest): LoginResponse? {
-        val user = repository.findByPhone(request.phone)
+        var user = repository.findByPhone(request.phone)
 
         if (user != null && user.isActive && user.uuid == request.uuid) {
             logSignInSuccess(user.id)
@@ -94,18 +95,21 @@ class UserService(
             )
         }
 
+        if (user == null) {
+            user = User(
+                phone = request.phone,
+                uuid = request.uuid,
+                name = "",
+                isActive = false
+            )
+            user = repository.save(user)
+        }
+
         val code = smsVerificationService.generateValidationCode(request.phone, request.uuid)
 
-        val tempUser = User(
-            phone = request.phone,
-            uuid = request.uuid,
-            name = "Usuário",
-            email = ""
-        )
-
         smsClient.send(
-            user = tempUser,
-            text = "Seu código de confirmação do AuthServer é: $code",
+            user = user,
+            text = "Your AuthServer confirmation code is: $code",
             important = true
         )
 
@@ -114,22 +118,14 @@ class UserService(
 
     fun confirmUser(request: ConfirmRequest): LoginResponse {
         if (!smsVerificationService.isValid(request.phone, request.uuid, request.code)) {
-            throw NotFoundException("Código de confirmação inválido, expirado ou não encontrado")
+            throw NotFoundException("Confirmation code is invalid, expired or not found")
         }
 
-        var user = repository.findByPhone(request.phone)
+        val user = repository.findByPhone(request.phone)
+            ?: throw NotFoundException("User not found for phone ${request.phone}")
 
-        if (user == null) {
-            user = User(
-                phone = request.phone,
-                uuid = request.uuid,
-                isActive = true,
-                email = ""
-            )
-        } else {
-            user.uuid = request.uuid
-            user.isActive = true
-        }
+        user.uuid = request.uuid
+        user.isActive = true
 
         val savedUser = repository.save(user)
         logSignInSuccess(savedUser.id)

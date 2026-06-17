@@ -50,7 +50,7 @@ class UserController(val service: UserService) {
             val (token, userResponse) = loginResult
             ResponseEntity.ok(LoginResponse(token, userResponse))
         } else {
-            ResponseEntity.accepted().body(mapOf("message" to "Código de confirmação enviado via SMS"))
+            ResponseEntity.accepted().body(mapOf("message" to "Confirmation code sent via SMS"))
         }
     }
 

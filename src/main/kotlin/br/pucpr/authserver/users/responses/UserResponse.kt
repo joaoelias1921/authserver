@@ -12,7 +12,7 @@ data class UserResponse(
 ) {
     constructor(user: User, avatarUrl: String) : this(
         id = user.id!!,
-        email = user.email,
+        email = user.email ?: "",
         name = user.name ?: "",
         bio = user.bio,
         avatar = avatarUrl,

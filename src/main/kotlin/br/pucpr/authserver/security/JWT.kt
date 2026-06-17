@@ -2,7 +2,6 @@ package br.pucpr.authserver.security
 
 import br.pucpr.authserver.users.User
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.jackson.io.JacksonDeserializer
 import io.jsonwebtoken.jackson.io.JacksonSerializer
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.HttpServletRequest
@@ -22,18 +21,20 @@ class Jwt(
     val props: SecurityProperties,
 ) {
     fun createToken(user: User): String =
-        UserToken(user).let {
+        UserToken(user).let { userToken ->
             Jwts.builder().json(JacksonSerializer())
                 .signWith(Keys.hmacShaKeyFor(props.secret.toByteArray()))
                 .issuedAt(utcNow().toDate())
                 .expiration(
                     utcNow().plusHours(
-                        if (it.isAdmin) props.adminExpireHours else props.expireHours
+                        if (userToken.isAdmin) props.adminExpireHours else props.expireHours
                     ).toDate()
                 )
                 .issuer(props.issuer)
                 .subject(user.id.toString())
-                .claim(USER_FIELD, it)
+                .claim("id", userToken.id)
+                .claim("roles", userToken.roles)
+                .claim("name", userToken.name)
                 .compact()
         }
 
@@ -43,13 +44,24 @@ class Jwt(
             if (header == null || !header.startsWith("Bearer")) return null
             val token = header.replace("Bearer", "").trim()
 
-            val claims = Jwts.parser().json(JacksonDeserializer(mapOf(USER_FIELD to UserToken::class.java)))
+            val claims = Jwts.parser()
                 .verifyWith(Keys.hmacShaKeyFor(props.secret.toByteArray()))
                 .build()
                 .parseSignedClaims(token).payload
 
             if (claims.issuer != props.issuer) return null
-            return claims.get("user", UserToken::class.java).toAuthentication()
+
+            val id = claims["id"]?.toString()?.toLong() ?: return null
+            val name = claims["name"]?.toString() ?: ""
+            val rolesRaw = claims["roles"] as? List<*> ?: emptyList<String>()
+            val roles = rolesRaw.map { it.toString() }.toSortedSet()
+
+            val userToken = UserToken(
+                id = id,
+                name = name,
+                roles = roles
+            )
+            return userToken.toAuthentication()
         } catch (e: Throwable) {
             log.debug("Token rejected", e)
             return null
@@ -57,12 +69,7 @@ class Jwt(
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(Jwt::class.java)
-        const val SECRET = "6d92f1d355bb43e11e8f04a9f115adabdcfb32b4"
-        const val EXPIRE_HOURS = 48L
-        const val ADMIN_EXPIRE_HOURS = 1L
-        const val ISSUER = "PUCPR AuthServer"
-        const val USER_FIELD = "user"
+        val log: Logger = LoggerFactory.getLogger(Jwt::class.java)
 
         private fun utcNow() = ZonedDateTime.now(ZoneOffset.UTC)
         private fun ZonedDateTime.toDate(): Date = Date.from(this.toInstant())

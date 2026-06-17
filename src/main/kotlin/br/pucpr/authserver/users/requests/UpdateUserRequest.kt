@@ -7,5 +7,7 @@ data class UpdateUserRequest(
     val name: String?,
 
     @NotBlank
-    val email: String,
+    val email: String?,
+
+    val bio: String
 )
